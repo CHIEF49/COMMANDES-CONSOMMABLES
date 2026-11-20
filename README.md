@@ -26,7 +26,7 @@ Application web d'une seule page pour gérer la liste de commande des consommabl
 4. **Indiquer l'identifiant du projet** dans `.firebaserc` (à la place de `VOTRE-ID-PROJET`).
 5. **Donner la clé à GitHub** : ⚙️ *Paramètres du projet* → *Comptes de service* → *Générer une nouvelle clé privée*. Dans GitHub : *Settings* → *Secrets and variables* → *Actions* → *New repository secret*, nom `FIREBASE_SERVICE_ACCOUNT`, valeur = tout le contenu du fichier JSON téléchargé.
 6. Envoyer les modifications sur `main` : l'application et les règles sont mises en ligne automatiquement (onglet *Actions* de GitHub).
-7. **Importer le catalogue** : ouvrir `https://VOTRE-ID-PROJET.web.app/outils/import-catalogue.html` et cliquer sur *Importer le catalogue*.
+7. **Importer le catalogue** : ouvrir `https://consommables-e2efa.web.app/outils/import-catalogue.html` et cliquer sur *Importer le catalogue*.
 
 ## Sécurité
 

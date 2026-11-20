@@ -12,4 +12,11 @@
 //   messagingSenderId: "123456789",
 //   appId: "1:123456789:web:abcdef"
 // };
-window.FIREBASE_CONFIG = null;
+window.FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAZIw8MeML9L1YkgonEe9VY7wJjEa-ejn0",
+  authDomain: "consommables-e2efa.firebaseapp.com",
+  projectId: "consommables-e2efa",
+  storageBucket: "consommables-e2efa.firebasestorage.app",
+  messagingSenderId: "898642137262",
+  appId: "1:898642137262:web:87f9bb18b5d81f61ecdd3f"
+};
