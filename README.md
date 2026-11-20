@@ -12,7 +12,8 @@ Application web d'une seule page pour gérer la liste de commande des consommabl
 
 ## Fichiers
 
-- `index.html` : toute l'application (HTML, CSS, JavaScript et logo intégrés).
+- `index.html` : toute l'application (HTML, CSS, JavaScript ; logo du PDF intégré).
+- `logo.png` : logo KITVIA affiché dans l'en-tête et l'écran de connexion.
 - `firebase-config.js` : la configuration Firebase du projet (à remplir).
 - `firebase.json`, `.firebaserc`, `firestore.rules` : hébergement Firebase et règles de la base.
 - `outils/import-catalogue.html` et `outils/catalogue.json` : import du catalogue (155 pièces) dans Firestore.
