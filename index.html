@@ -546,7 +546,6 @@
         '<div class="row-name">' + esc(i.name) + '</div>' +
         (i.reference ? '<div class="row-meta">Réf. ' + esc(i.reference) + '</div>' : '') +
         (i.device ? '<div class="row-meta">Appareil ' + esc(i.device) + '</div>' : '') +
-        (i.prix ? '<div class="row-meta">' + esc(i.prix) + ' € HT</div>' : '') +
         (i.note ? '<div class="row-note">' + esc(i.note) + '</div>' : '') +
         '<div class="row-chips"><span class="chip ' + st.cls + '">' + st.label + '</span>' + (i.urgent ? '<span class="chip hs">Urgent</span>' : '') + '</div>' +
         '<div class="qty"><button class="dec" aria-label="Diminuer" ' + ro() + '>−</button><span class="qty-val">' + (i.quantity || 1) + '</span><button class="inc" aria-label="Augmenter" ' + ro() + '>+</button></div>' +
@@ -656,7 +655,7 @@
         const d = i.device || 'Sans appareil';
         const h = d !== last ? '<h3 class="grp">' + esc(d) + '</h3>' : '';
         last = d;
-        return h + '<div style="display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)"><div style="flex:1;min-width:0"><div class="row-name" style="font-size:14px">' + esc(i.name) + '</div><div class="row-meta">' + esc(i.reference || '') + (i.prix ? ' · ' + esc(i.prix) + ' € HT' : '') + '</div></div><button class="icon-btn pdf" data-add="' + i.id + '" ' + ro() + '>Ajouter</button></div>';
+        return h + '<div style="display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)"><div style="flex:1;min-width:0"><div class="row-name" style="font-size:14px">' + esc(i.name) + '</div><div class="row-meta">' + esc(i.reference || '') + '</div></div><button class="icon-btn pdf" data-add="' + i.id + '" ' + ro() + '>Ajouter</button></div>';
       }).join('') : '<p class="row-meta">Aucun consommable dans le catalogue.</p>';
       q('#c-list').querySelectorAll('[data-add]').forEach(btn => btn.addEventListener('click', async () => {
         const i = items.find(x => x.id === btn.getAttribute('data-add'));
