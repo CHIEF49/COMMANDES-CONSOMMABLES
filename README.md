@@ -28,9 +28,18 @@ Application web d'une seule page pour gérer la liste de commande des consommabl
 6. Envoyer les modifications sur `main` : l'application et les règles sont mises en ligne automatiquement (onglet *Actions* de GitHub).
 7. **Importer le catalogue** : ouvrir `https://consommables-e2efa.web.app/outils/import-catalogue.html` et cliquer sur *Importer le catalogue*.
 
-## Sécurité
+## Accès par mot de passe
 
-Les règles (`firestore.rules`) laissent toute personne qui a l'adresse lire et modifier la liste, sans connexion, mais seulement dans la collection `commandes` et avec des fiches de forme valide. Pour réserver l'accès à l'équipe, il faudra ajouter une connexion (par exemple avec un compte Google).
+L'application hébergée sur Firebase demande un mot de passe unique, partagé par l'équipe.
+Il s'agit du mot de passe du compte Firebase `equipe@consommables-e2efa.app` (Authentication → Utilisateurs).
+Les règles (`firestore.rules`) n'autorisent la lecture et la modification de la liste qu'à ce compte : sans le mot de passe, la base est inaccessible.
+
+Mise en place (une fois) :
+1. Authentication → Commencer → Méthode de connexion : activer **Adresse e-mail/Mot de passe**.
+2. Authentication → Utilisateurs → Ajouter un utilisateur : `equipe@consommables-e2efa.app` + le mot de passe choisi.
+3. Firestore Database → Règles : coller le contenu de `firestore.rules`, puis Publier.
+
+Pour changer le mot de passe : Authentication → Utilisateurs → menu ⋮ du compte → Réinitialiser le mot de passe… ou supprimer et recréer le compte avec le nouveau mot de passe.
 
 ## Remarque
 

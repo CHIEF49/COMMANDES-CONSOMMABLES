@@ -313,6 +313,7 @@
     font-family: 'JetBrains Mono', monospace;
   }
 
+  .sheet-backdrop.login { background: var(--header-bg, #33345B); align-items: center; z-index: 50; }
   .sheet-backdrop {
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.42);
@@ -466,6 +467,7 @@
 <div class="top-actions" style="flex-wrap:wrap">
   <button class="export-btn" id="clear-list" style="display:none;color:#942c24;border-color:#942c24">Vider la liste à commander</button>
   <button class="export-btn" id="open-cat">Ajouter depuis le catalogue</button>
+  <button class="export-btn" id="logout" style="display:none">Se déconnecter</button>
   <button class="export-btn" id="export-pdf">PDF liste</button>
   <button class="add-btn" id="open-add">+ Ajouter au catalogue</button>
 </div>
@@ -754,9 +756,40 @@
     if (!window.firebase || !window.firebase.firestore) {
       await loadScript('https://www.gstatic.com/firebasejs/' + FB_VER + '/firebase-app-compat.js');
       await loadScript('https://www.gstatic.com/firebasejs/' + FB_VER + '/firebase-firestore-compat.js');
+      await loadScript('https://www.gstatic.com/firebasejs/' + FB_VER + '/firebase-auth-compat.js');
     }
     if (!window.firebase.apps.length) window.firebase.initializeApp(cfg);
+    const auth = window.firebase.auth();
+    const user = await new Promise(ok => { const off = auth.onAuthStateChanged(u => { off(); ok(u); }); });
+    if (!user) await askPassword(auth);
+    const lo = $('logout'); if (lo) { lo.style.display = ''; lo.onclick = () => auth.signOut().then(() => location.reload()); }
     return window.firebase.firestore();
+  }
+
+  // Écran d'accès : un seul mot de passe partagé par l'équipe (compte Firebase LOGIN_EMAIL).
+  function askPassword(auth) {
+    const email = window.FIREBASE_LOGIN_EMAIL || 'equipe@consommables-e2efa.app';
+    return new Promise(done => {
+      const b = document.createElement('div');
+      b.className = 'sheet-backdrop login';
+      b.innerHTML = '<form class="sheet" role="dialog" aria-modal="true"><h2>Commande consommables</h2>' +
+        '<div class="field"><label for="pwd">Mot de passe</label><input id="pwd" type="password" autocomplete="current-password" required></div>' +
+        '<p class="row-meta" id="pwd-err" style="color:#942c24;min-height:1em"></p>' +
+        '<div class="sheet-actions"><button class="btn-primary" type="submit">Entrer</button></div></form>';
+      document.body.appendChild(b);
+      const f = b.querySelector('form'), i = b.querySelector('#pwd'), err = b.querySelector('#pwd-err'), go = b.querySelector('button');
+      setTimeout(() => i.focus(), 50);
+      f.addEventListener('submit', async e => {
+        e.preventDefault(); err.textContent = ''; go.disabled = true; go.textContent = 'Vérification…';
+        try { await auth.signInWithEmailAndPassword(email, i.value); b.remove(); done(); }
+        catch (x) {
+          const c = x && x.code || '';
+          err.textContent = c.includes('too-many-requests') ? 'Trop d’essais. Patientez quelques minutes.' :
+            (c.includes('network') ? 'Pas de connexion internet.' : 'Mot de passe incorrect.');
+          go.disabled = false; go.textContent = 'Entrer'; i.select();
+        }
+      });
+    });
   }
 
   async function boot() {

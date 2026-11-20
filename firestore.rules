@@ -1,13 +1,17 @@
 rules_version = '2';
 
-// Accès par le lien : toute personne qui ouvre l'application peut lire et modifier la liste.
+// Accès par mot de passe : seul le compte de l'équipe (equipe@consommables-e2efa.app),
+// connecté avec le mot de passe partagé, peut lire et modifier la liste.
 // Seule la collection « commandes » est accessible, et chaque fiche doit avoir une forme valide.
 service cloud.firestore {
   match /databases/{database}/documents {
     match /commandes/{id} {
-      allow read: if true;
-      allow delete: if true;
-      allow create, update: if valide(request.resource.data);
+      allow read, delete: if equipe();
+      allow create, update: if equipe() && valide(request.resource.data);
+    }
+
+    function equipe() {
+      return request.auth != null && request.auth.token.email == 'equipe@consommables-e2efa.app';
     }
 
     function valide(d) {

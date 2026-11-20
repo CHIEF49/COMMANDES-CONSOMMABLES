@@ -20,3 +20,7 @@ window.FIREBASE_CONFIG = {
   messagingSenderId: "898642137262",
   appId: "1:898642137262:web:87f9bb18b5d81f61ecdd3f"
 };
+
+// Compte unique utilisé pour l'accès par mot de passe (Authentication → Utilisateurs).
+// Le mot de passe de ce compte est celui que l'équipe tape pour entrer.
+window.FIREBASE_LOGIN_EMAIL = "equipe@consommables-e2efa.app";

@@ -19,6 +19,7 @@
   <h1>Importer le catalogue</h1>
   <p>Ajoute les pièces du fichier <code>catalogue.json</code> dans la base Firebase de l'application.
      Les pièces déjà présentes ne sont pas modifiées : vous pouvez relancer l'import sans risque.</p>
+  <p><label>Mot de passe de l'équipe<br><input id="pwd" type="password" style="padding:9px 10px;border:1px solid #D8D8DE;border-radius:10px;font-size:14px;width:100%;box-sizing:border-box;margin:6px 0 12px"></label></p>
   <button id="go">Importer le catalogue</button>
   <div id="log"></div>
   <p><a href="../">← Retour à l'application</a></p>
@@ -26,6 +27,7 @@
 <script src="../firebase-config.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
   const log = t => { document.getElementById('log').textContent += t + '\n'; };
   const btn = document.getElementById('go');
@@ -34,6 +36,7 @@
     btn.disabled = true;
     try {
       if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
+      await firebase.auth().signInWithEmailAndPassword(window.FIREBASE_LOGIN_EMAIL, document.getElementById('pwd').value);
       const db = firebase.firestore();
       const list = await (await fetch('catalogue.json', { cache: 'no-store' })).json();
       const existing = new Set((await db.collection('commandes').get()).docs.map(d => d.id));
