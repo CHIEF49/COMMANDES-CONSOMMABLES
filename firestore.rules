@@ -1,0 +1,24 @@
+rules_version = '2';
+
+// Accès par le lien : toute personne qui ouvre l'application peut lire et modifier la liste.
+// Seule la collection « commandes » est accessible, et chaque fiche doit avoir une forme valide.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /commandes/{id} {
+      allow read: if true;
+      allow delete: if true;
+      allow create, update: if valide(request.resource.data);
+    }
+
+    function valide(d) {
+      return d.keys().hasOnly(['name', 'device', 'reference', 'quantity', 'status', 'urgent', 'note'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 200
+        && d.status in ['catalogue', 'a_commander']
+        && (!('quantity' in d) || (d.quantity is int && d.quantity >= 1 && d.quantity <= 9999))
+        && (!('device' in d) || (d.device is string && d.device.size() <= 60))
+        && (!('reference' in d) || (d.reference is string && d.reference.size() <= 80))
+        && (!('note' in d) || (d.note is string && d.note.size() <= 1000))
+        && (!('urgent' in d) || d.urgent is bool);
+    }
+  }
+}

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Importer le catalogue — Commande consommables</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #E9E9EC; color: #33345B; margin: 0; padding: 32px 18px; }
+  .box { max-width: 520px; margin: 0 auto; background: #fff; border: 1px solid #D8D8DE; border-radius: 14px; padding: 24px; }
+  h1 { font-size: 20px; margin: 0 0 10px; }
+  p { color: #6C6C80; font-size: 14px; line-height: 1.5; }
+  button { background: #33345B; color: #fff; border: none; border-radius: 10px; padding: 11px 16px; font-weight: 700; font-size: 14px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  #log { margin-top: 16px; font-family: ui-monospace, monospace; font-size: 13px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>Importer le catalogue</h1>
+  <p>Ajoute les pièces du fichier <code>catalogue.json</code> dans la base Firebase de l'application.
+     Les pièces déjà présentes ne sont pas modifiées : vous pouvez relancer l'import sans risque.</p>
+  <button id="go">Importer le catalogue</button>
+  <div id="log"></div>
+  <p><a href="../">← Retour à l'application</a></p>
+</div>
+<script src="../firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  const log = t => { document.getElementById('log').textContent += t + '\n'; };
+  const btn = document.getElementById('go');
+  if (!window.FIREBASE_CONFIG) { btn.disabled = true; log('Firebase n’est pas encore configuré (fichier firebase-config.js).'); }
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
+      const db = firebase.firestore();
+      const list = await (await fetch('catalogue.json', { cache: 'no-store' })).json();
+      const existing = new Set((await db.collection('commandes').get()).docs.map(d => d.id));
+      const todo = list.filter(x => !existing.has(x.id));
+      log(list.length + ' pièces dans le fichier, ' + (list.length - todo.length) + ' déjà présentes.');
+      for (let k = 0; k < todo.length; k += 400) {
+        const batch = db.batch();
+        todo.slice(k, k + 400).forEach(({ id, ...data }) => batch.set(db.collection('commandes').doc(id), data));
+        await batch.commit();
+      }
+      log(todo.length + ' pièce(s) ajoutée(s). Terminé.');
+    } catch (e) {
+      log('Erreur : ' + (e && e.message ? e.message : e));
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

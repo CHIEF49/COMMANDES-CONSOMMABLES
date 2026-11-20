@@ -1,0 +1,36 @@
+name: Mise en ligne Firebase
+
+# À chaque modification envoyée sur main, l'application et les règles Firestore
+# sont mises en ligne sur Firebase. Tant que le secret FIREBASE_SERVICE_ACCOUNT
+# n'est pas ajouté ou que .firebaserc contient encore VOTRE-ID-PROJET, rien n'est fait.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Vérifier la configuration
+        id: check
+        run: |
+          if [ -z "$SA" ]; then echo "Secret FIREBASE_SERVICE_ACCOUNT absent : mise en ligne ignorée."; echo "ok=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if grep -q "VOTRE-ID-PROJET" .firebaserc; then echo ".firebaserc n'est pas encore rempli : mise en ligne ignorée."; echo "ok=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          echo "ok=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.ok == 'true'
+        with:
+          node-version: 20
+
+      - name: Mettre en ligne
+        if: steps.check.outputs.ok == 'true'
+        run: |
+          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          npx -y firebase-tools@13 deploy --only hosting,firestore:rules --non-interactive
