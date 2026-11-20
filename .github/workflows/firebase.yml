@@ -1,7 +1,7 @@
 name: Mise en ligne Firebase
 
-# À chaque modification envoyée sur main, l'application et les règles Firestore
-# sont mises en ligne sur Firebase. Tant que le secret FIREBASE_SERVICE_ACCOUNT
+# À chaque modification envoyée sur main, l'application
+# est mise en ligne sur Firebase (les règles Firestore se collent dans la console). Tant que le secret FIREBASE_SERVICE_ACCOUNT
 # n'est pas ajouté ou que .firebaserc contient encore VOTRE-ID-PROJET, rien n'est fait.
 on:
   push:
@@ -33,4 +33,4 @@ jobs:
         run: |
           printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
-          npx -y firebase-tools@13 deploy --only hosting,firestore:rules --non-interactive
+          npx -y firebase-tools@13 deploy --only hosting --non-interactive
