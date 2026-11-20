@@ -449,14 +449,13 @@
     body{display:grid;grid-template-columns:250px 1fr;grid-auto-rows:min-content;min-height:100vh;background:linear-gradient(to right,var(--header-bg) 250px,var(--bg) 250px) no-repeat}
     header{grid-column:1;grid-row:1 / span 3;flex-direction:column;align-items:flex-start;padding:26px 20px 12px;background:transparent}
     .subtitle{display:none}
-    .header-text::after{content:'PARC MACHINES';display:block;margin-top:8px;font:500 12px 'JetBrains Mono',monospace;letter-spacing:.18em;color:var(--accent)}
+    .header-text::after{content:'COMMANDES';display:block;margin-top:8px;font:500 12px 'JetBrains Mono',monospace;letter-spacing:.18em;color:var(--accent)}
     .section-switch{grid-column:1;grid-row:4 / span 30;flex-direction:column;gap:2px;padding:28px 0 0;background:transparent}
     .section-switch::before{content:'INVENTAIRE';font:500 12px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#8F90B8;padding:0 20px 12px}
     .sec-btn{flex:none;text-align:left;border:none;border-left:4px solid transparent;border-radius:0;padding:14px 20px;font-size:16px}
     .sec-btn.active{background:#3E4A74;border-left-color:var(--accent)}
     #banner-slot,.top-actions,.page-title,.toolbar,.stats,#tabs,#piece-tabs,main,.app-footer{grid-column:2}
   }
-  .header-text::after{content:'COMMANDES'}
   .next{margin-right:auto}
   .icon-btn.del{color:#942c24}
   .icon-btn.del.arm{background:#942c24;color:#fff;width:auto;padding:0 10px}
@@ -465,6 +464,7 @@
 </head>
 <body>
 <div class="top-actions" style="flex-wrap:wrap">
+  <button class="export-btn" id="open-cat">Ajouter depuis le catalogue</button>
   <button class="export-btn" id="export-pdf">PDF liste</button>
   <button class="add-btn" id="open-add">+ Ajouter au catalogue</button>
 </div>
@@ -591,6 +591,7 @@
   $('dev-filter').addEventListener('change', e => { devF = e.target.value; render(); });
   $('open-add').addEventListener('click', () => sheet());
   $('export-pdf').addEventListener('click', pdf);
+  $('open-cat').addEventListener('click', catalogue);
 
   function sheet(it) {
     let st = it ? it.status || 'catalogue' : 'catalogue', urg = !!(it && it.urgent);
@@ -726,7 +727,8 @@
   }
 
   async function boot() {
-    const use = n => (window.claude && typeof window.claude.use === 'function') ? window.claude.use(n).catch(() => null) : Promise.resolve(null);
+    for (let k = 0; k < 30 && !(window.claude && typeof window.claude.use === 'function'); k++) await new Promise(r => setTimeout(r, 100));
+    const use = n => (window.claude && typeof window.claude.use === 'function') ? Promise.resolve(window.claude.use(n)).catch(() => null) : Promise.resolve(null);
     dl = await use('downloads');
     db = await use('db');
     if (!db) {
@@ -736,10 +738,11 @@
     }
     try { const u = await use('user'); if (u) canWrite = await u.can('data.write'); } catch (e) { canWrite = null; }
     if (canWrite === false) banner('Vous êtes en lecture seule sur cette liste.');
+    const tmo = setTimeout(() => { if (!loaded) { loaded = true; banner('La liste met du temps à charger. Vérifiez votre connexion.'); render(); } }, 10000);
     try {
       db.collection('commandes').orderBy('name').onSnapshot(
-        s => { items = s.docs.map(d => ({ id: d.id, ...d.data() })); loaded = true; render(); },
-        () => { loaded = true; banner('La connexion à la liste a été interrompue. Rechargez la page.'); render(); });
+        s => { clearTimeout(tmo); banner(canWrite === false ? 'Vous êtes en lecture seule sur cette liste.' : ''); items = s.docs.map(d => ({ id: d.id, ...d.data() })); loaded = true; render(); },
+        () => { clearTimeout(tmo); loaded = true; banner('La connexion à la liste a été interrompue. Rechargez la page.'); render(); });
     } catch (e) { loaded = true; banner('Impossible de charger la liste.'); render(); }
   }
   render();
