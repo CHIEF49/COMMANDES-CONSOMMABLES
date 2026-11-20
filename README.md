@@ -5,8 +5,8 @@ Application web d'une seule page pour gérer la liste de commande des consommabl
 ## Fonctionnement
 
 - **Catalogue** : toutes les pièces connues (nom, référence, appareil).
-- **À commander** : les pièces ajoutées à la prochaine commande, avec quantité et mention « Urgent ».
-- **Commandé** : les pièces commandées, en attente de réception. « Marquer reçu » les renvoie au catalogue.
+- **À commander** : les pièces de la prochaine commande, avec quantité et mention « Urgent ». « Retirer de la commande » renvoie une pièce au catalogue.
+- **Vider la liste à commander** : remet en une fois toutes les pièces à commander dans le catalogue (avec confirmation).
 - Les pièces sont regroupées par fabricant (ELITECH, SKYLA, BIONOTE, TOSOH, EDIF, NIHON KOHDEN, URIT, Autres) puis par appareil.
 - **PDF liste** : exporte la liste affichée, avec logo, regroupée par fabricant, urgents en rouge.
 

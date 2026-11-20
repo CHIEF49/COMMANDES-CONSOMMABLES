@@ -464,6 +464,7 @@
 </head>
 <body>
 <div class="top-actions" style="flex-wrap:wrap">
+  <button class="export-btn" id="clear-list" style="display:none;color:#942c24;border-color:#942c24">Vider la liste à commander</button>
   <button class="export-btn" id="open-cat">Ajouter depuis le catalogue</button>
   <button class="export-btn" id="export-pdf">PDF liste</button>
   <button class="add-btn" id="open-add">+ Ajouter au catalogue</button>
@@ -493,14 +494,15 @@
     recu: { label: 'Reçu', cls: 'service' },
     catalogue: { label: 'Catalogue', cls: 'neutral' }
   };
-  const NEXT = { catalogue: 'a_commander', a_commander: 'commande', commande: 'catalogue' };
-  const NEXT_LABEL = { catalogue: 'Ajouter à la commande', a_commander: 'Marquer commandé', commande: 'Marquer reçu' };
+  const NEXT = { catalogue: 'a_commander', a_commander: 'catalogue' };
+  const NEXT_LABEL = { catalogue: 'Ajouter à la commande', a_commander: 'Retirer de la commande' };
   const DEVICES = ['PROVET', 'KHEMA4', 'AiA 360', 'KHEMA 6', 'KBIO 4', 'KBIO 5', 'KBIO 6', 'KBIO 7', 'KIMMUNO', 'M10', 'ABACUS', 'COAGPOC', 'EPOC', 'HEMOVET', 'I-SMART', 'URIREADER', 'Autres'];
   const devRank = d => { const k = DEVICES.indexOf(d || ''); return k < 0 ? 999 : k; };
   const FAM = { 'AiA 360': 'TOSOH', 'KBIO 4': 'EDIF', 'KBIO 6': 'EDIF', 'KHEMA4': 'NIHON KOHDEN', 'PROVET': 'ELITECH', 'KBIO 5': 'SKYLA', 'KBIO 7': 'SKYLA', 'KIMMUNO': 'BIONOTE', 'M10': 'BIONOTE', 'KHEMA 6': 'URIT' };
   const FAM_ORDER = ['ELITECH', 'SKYLA', 'BIONOTE', 'TOSOH', 'EDIF', 'NIHON KOHDEN', 'URIT', 'Autres'];
   const famOf = i => FAM[i.device] || 'Autres';
-  const TABS = [['catalogue', 'Catalogue'], ['a_commander', 'À commander'], ['commande', 'Commandé']];
+  const TABS = [['catalogue', 'Catalogue'], ['a_commander', 'À commander']];
+  const inCat = i => i.status !== 'a_commander';
 
   let db = null, dl = null, canWrite = null, items = [], loaded = false, filter = 'a_commander', term = '', devF = 'all';
   const $ = id => document.getElementById(id);
@@ -511,12 +513,13 @@
   function count(k) {
     if (k === 'all') return items.filter(i => i.status !== 'catalogue').length;
     if (k === 'urgent') return items.filter(i => i.urgent && i.status !== 'recu').length;
+    if (k === 'catalogue') return items.filter(inCat).length;
     return items.filter(i => i.status === k).length;
   }
   function visible() {
-    if (filter === 'a_commander' || filter === 'commande') return items.filter(i => i.status === filter);
+    if (filter === 'a_commander') return items.filter(i => i.status === filter);
     const t = term.trim().toLowerCase();
-    let l = items.filter(i => filter === 'all' ? (i.status !== 'catalogue' || !!t) : (filter === 'urgent' ? i.urgent && i.status !== 'recu' : i.status === filter));
+    let l = items.filter(i => filter === 'all' ? (i.status !== 'catalogue' || !!t) : (filter === 'urgent' ? i.urgent && i.status !== 'recu' : (filter === 'catalogue' ? inCat(i) : i.status === filter)));
     if (t) l = l.filter(i => [i.name, i.reference, i.device].some(v => (v || '').toLowerCase().includes(t)));
     if (devF !== 'all') l = l.filter(i => (i.device || '') === devF);
     return l;
@@ -528,6 +531,7 @@
       '<div class="stat" data-f="' + k + '"><div class="stat-num">' + count(k) + '</div><div class="stat-label">' + l + '</div></div>').join('');
     $('tabs').innerHTML = TABS.map(([k, l]) =>
       '<button class="tab' + (k === filter ? ' active' : '') + '" data-f="' + k + '">' + l + ' <span class="count">' + count(k) + '</span></button>').join('');
+    const cb = $('clear-list'); if (cb && !cb.classList.contains('arm')) cb.style.display = (loaded && db && filter === 'a_commander' && count('a_commander') && canWrite !== false) ? '' : 'none';
     if (!loaded) return;
     const l = visible().sort((a, b) => FAM_ORDER.indexOf(famOf(a)) - FAM_ORDER.indexOf(famOf(b)) || devRank(a.device) - devRank(b.device) || (a.name || '').localeCompare(b.name || '')), el = $('list');
     if (!l.length) {
@@ -550,7 +554,7 @@
         '<div class="row-chips"><span class="chip ' + st.cls + '">' + st.label + '</span>' + (i.urgent ? '<span class="chip hs">Urgent</span>' : '') + '</div>' +
         '<div class="qty"><button class="dec" aria-label="Diminuer" ' + ro() + '>−</button><span class="qty-val">' + (i.quantity || 1) + '</span><button class="inc" aria-label="Augmenter" ' + ro() + '>+</button></div>' +
         '</div><div class="row-actions">' +
-        (NEXT[i.status] ? '<button class="icon-btn pdf next" ' + ro() + '>' + NEXT_LABEL[i.status] + '</button>' : '') +
+        '<button class="icon-btn pdf next" ' + ro() + '>' + NEXT_LABEL[i.status === 'a_commander' ? 'a_commander' : 'catalogue'] + '</button>' +
         '<button class="icon-btn edit" aria-label="Modifier" ' + ro() + '>✎</button><button class="icon-btn del" aria-label="Supprimer" ' + ro() + '>✕</button></div></div>';
     }).join('');
     el.querySelectorAll('.row').forEach(r => {
@@ -570,7 +574,7 @@
       });
       r.querySelector('.inc').addEventListener('click', () => upd(i, { quantity: (i.quantity || 1) + 1 }));
       r.querySelector('.dec').addEventListener('click', () => upd(i, { quantity: Math.max(1, (i.quantity || 1) - 1) }));
-      const n = r.querySelector('.next'); if (n) n.addEventListener('click', () => upd(i, { status: NEXT[i.status] }));
+      const n = r.querySelector('.next'); if (n) n.addEventListener('click', () => upd(i, { status: i.status === 'a_commander' ? 'catalogue' : 'a_commander' }));
     });
   }
 
@@ -591,9 +595,24 @@
   $('open-add').addEventListener('click', () => sheet());
   $('export-pdf').addEventListener('click', pdf);
   $('open-cat').addEventListener('click', catalogue);
+  $('clear-list').addEventListener('click', async () => {
+    const cb = $('clear-list');
+    if (!cb.classList.contains('arm')) {
+      cb.classList.add('arm'); cb.textContent = 'Confirmer : tout retirer ?';
+      cb._t = setTimeout(() => { cb.classList.remove('arm'); cb.textContent = 'Vider la liste à commander'; render(); }, 4000);
+      return;
+    }
+    clearTimeout(cb._t); cb.disabled = true; cb.textContent = 'Suppression…';
+    const l = items.filter(i => i.status === 'a_commander'), data = { status: 'catalogue', quantity: 1, urgent: false };
+    let fail = 0;
+    for (const i of l) { try { await db.collection('commandes').doc(i.id).update(data); Object.assign(i, data); } catch (e) { fail++; } }
+    cb.disabled = false; cb.classList.remove('arm'); cb.textContent = 'Vider la liste à commander';
+    if (fail) banner(fail + ' article(s) n’ont pas pu être retirés. Réessayez.');
+    render();
+  });
 
   function sheet(it) {
-    let st = it ? it.status || 'catalogue' : 'catalogue', urg = !!(it && it.urgent);
+    let st = it && it.status === 'a_commander' ? 'a_commander' : 'catalogue', urg = !!(it && it.urgent);
     const b = document.createElement('div'); b.className = 'sheet-backdrop';
     const fld = (l, id, h) => '<div class="field"><label for="' + id + '">' + l + '</label>' + h + '</div>';
     b.innerHTML = '<div class="sheet" role="dialog" aria-modal="true"><h2>' + (it ? 'Modifier le consommable' : 'Ajouter au catalogue') + '</h2>' +
@@ -602,7 +621,7 @@
       fld('Référence (facultatif)', 'f-ref', '<input id="f-ref" type="text" value="' + esc(it && it.reference || '') + '" placeholder="Ex. REF-1234">') +
       fld('Quantité à commander', 'f-qty', '<input id="f-qty" type="number" min="1" value="' + (it ? it.quantity || 1 : 1) + '">') +
       '<div class="field"><label>Statut</label><div class="status-picker" id="st-pick">' +
-      ['catalogue', 'a_commander', 'commande'].map(k => '<button type="button" class="status-opt' + (k === st ? ' sel ' + STATUS[k].cls : '') + '" data-s="' + k + '">' + STATUS[k].label + '</button>').join('') +
+      ['catalogue', 'a_commander'].map(k => '<button type="button" class="status-opt' + (k === st ? ' sel ' + STATUS[k].cls : '') + '" data-s="' + k + '">' + STATUS[k].label + '</button>').join('') +
       '<button type="button" class="status-opt' + (urg ? ' sel hs' : '') + '" id="urg">Urgent</button></div></div>' +
       fld('Note (facultatif)', 'f-note', '<textarea id="f-note" placeholder="Remarque…">' + esc(it && it.note || '') + '</textarea>') +
       '<div class="sheet-actions">' + (it ? '<button class="btn-danger" id="del">Supprimer</button>' : '') +
@@ -647,7 +666,7 @@
     q('#c-close').addEventListener('click', () => b.remove());
     function draw() {
       const t = q('#c-q').value.trim().toLowerCase();
-      const l = items.filter(i => i.status === 'catalogue' || i.status === 'recu')
+      const l = items.filter(inCat)
         .filter(i => !t || [i.name, i.reference, i.device].some(v => (v || '').toLowerCase().includes(t)))
         .sort((a, c) => devRank(a.device) - devRank(c.device) || (a.name || '').localeCompare(c.name || ''));
       let last = null;
