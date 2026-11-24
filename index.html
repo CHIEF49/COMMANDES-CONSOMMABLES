@@ -283,7 +283,7 @@
     const b = e.target.closest('[data-act]'); if (!b) return;
     const row = b.closest('[data-id]'); const i = row && items.find(x => x.id === row.getAttribute('data-id')); if (!i) return;
     const a = b.getAttribute('data-act');
-    if (a === 'add') upd(i, { status: 'a_commander', quantity: 1, urgent: false }, 'Pièce ajoutée à la commande.');
+    if (a === 'add') askQty(i);
     else if (a === 'remove') upd(i, { status: 'catalogue', quantity: 1, urgent: false }, 'Pièce retirée de la commande.');
     else if (a === 'urgent') upd(i, { urgent: !i.urgent });
     else if (a === 'inc') upd(i, { quantity: Math.min(9999, (i.quantity || 1) + 1) });
@@ -307,6 +307,42 @@
     render();
     if (fail) banner(fail + ' pièce(s) n’ont pas pu être retirées. Réessayez.'); else toast('Commande vidée.');
   });
+
+  /* ---------- Fenêtre quantité (au clic sur « + Ajouter ») ---------- */
+  function askQty(i) {
+    if (!db || canWrite === false) return;
+    const o = document.createElement('div'); o.className = 'overlay';
+    o.innerHTML = '<form class="modal" role="dialog" aria-modal="true" aria-labelledby="q-title" style="max-width:400px">' +
+      '<h2 id="q-title">Ajouter à la commande</h2>' +
+      '<div style="margin:-6px 0 14px"><div class="item-name">' + esc(i.name) + '</div>' +
+      '<div class="mono item-ref">' + esc([i.reference, i.device].filter(Boolean).join(' · ')) + '</div></div>' +
+      '<div class="fld"><label for="q-val">Quantité</label>' +
+      '<div style="display:flex;gap:8px;align-items:center">' +
+      '<button type="button" class="btn" id="q-dec" aria-label="Diminuer" style="width:44px;height:44px;padding:0;font-size:20px">−</button>' +
+      '<input id="q-val" type="number" inputmode="numeric" min="1" max="9999" step="1" value="1" required style="flex:1;text-align:center;font-size:20px;font-weight:700;padding:8px">' +
+      '<button type="button" class="btn" id="q-inc" aria-label="Augmenter" style="width:44px;height:44px;padding:0;font-size:20px">+</button></div></div>' +
+      '<label style="display:flex;align-items:center;gap:8px;margin:4px 0 6px;cursor:pointer;font-weight:500"><input type="checkbox" id="q-urg" style="width:18px;height:18px;accent-color:var(--bad)"> Urgent</label>' +
+      '<p class="err" id="q-err"></p>' +
+      '<div class="mfoot"><button type="button" class="btn" id="q-cancel">Annuler</button><button type="submit" class="btn primary" id="q-ok">Ajouter à la commande</button></div></form>';
+    document.body.appendChild(o);
+    const q = s => o.querySelector(s), v = q('#q-val');
+    const close = () => { o.remove(); document.removeEventListener('keydown', onKey); };
+    const onKey = e => { if (e.key === 'Escape') close(); };
+    const val = () => Math.min(9999, Math.max(1, parseInt(v.value, 10) || 1));
+    document.addEventListener('keydown', onKey);
+    o.addEventListener('mousedown', e => { if (e.target === o) close(); });
+    q('#q-cancel').addEventListener('click', close);
+    q('#q-dec').addEventListener('click', () => { v.value = Math.max(1, val() - 1); v.focus(); });
+    q('#q-inc').addEventListener('click', () => { v.value = Math.min(9999, val() + 1); v.focus(); });
+    v.focus(); v.select();
+    q('form').addEventListener('submit', e => {
+      e.preventDefault();
+      const n = parseInt(v.value, 10);
+      if (!(n >= 1 && n <= 9999)) { q('#q-err').textContent = 'Saisissez une quantité entre 1 et 9999.'; v.focus(); v.select(); return; }
+      close();
+      upd(i, { status: 'a_commander', quantity: n, urgent: q('#q-urg').checked }, n + ' × ' + i.name + ' ajouté à la commande.');
+    });
+  }
 
   /* ---------- Fenêtre pièce ---------- */
   function sheet(it) {
